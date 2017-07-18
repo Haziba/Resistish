@@ -14,7 +14,7 @@ require('./shared/pubsub.js');
 
 require('./socket.js')(server);
 
-require('./game.js');
+require('./game.js')();
 
 server.listen(4200);
 

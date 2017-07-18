@@ -11,7 +11,8 @@ module.exports = function(server){
 		console.log('Client ' + id + ' connected...');
 
 		client.on('join', function(data) {
-			console.log(data);
+			pub('socket join', id, data); 
+			console.log('join', id, data);
 		});
 
 		client.on('message', function(data) {
@@ -19,7 +20,7 @@ module.exports = function(server){
 			console.log('message', id, data);
 		});
 
-		sub("socket message send", function(data){
+		sub("socket message send " + id, function(data){
 			client.emit("message", data);
 			console.log('socket message send', id, data);
 		});

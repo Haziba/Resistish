@@ -3,7 +3,7 @@ socket.on('connect', function(data) {
 	socket.emit('join', 'Hello World from client');
 });
 socket.on('message', function(data) {
-	$('#future').append(data+ "<br/>");
+	console.log(data);
 });
 $('form').submit(function(e){
 	e.preventDefault();
