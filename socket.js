@@ -8,21 +8,18 @@ module.exports = function(server){
 		var id = totalClients++;
 		clients[id] = client;
 
-		console.log('Client ' + id + ' connected...');
-
-		client.on('join', function(data) {
-			pub('socket join', id, data); 
-			console.log('join', id, data);
-		});
+		console.log('Socket - Client ' + id + ' connected...');
 
 		client.on('message', function(data) {
 			pub('socket message get ' + id, data);
-			console.log('message', id, data);
+			console.log('Socket - message', id, data);
 		});
 
 		sub("socket message send " + id, function(data){
 			client.emit("message", data);
-			console.log('socket message send', id, data);
+			console.log('Socket - socket message send', id, data);
 		});
+
+		pub('socket join', id); 
 	});
 }

@@ -4,17 +4,57 @@
 
     </head>
     <body>
-        <h1>Hello World!</h1>
-        <div id="future"></div>
-        <form id="form" id="chat_form">
-            <input id="chat_input" type="text">
-            <input type="submit" value="Send">
-        </form>
+	<div class="player" id="player1">
+		<div class="team"></div>
+	</div>
+	<div class="player" id="player2">
+		<div class="team"></div>
+	</div>
+	<div class="player" id="player3">
+		<div class="team"></div>
+	</div>
+	<div class="player" id="player4">
+		<div class="team"></div>
+	</div>
+	<div class="player" id="player5">
+		<div class="team"></div>
+	</div>
+
 	<script src="/jquery/dist/jquery.js"></script>
         <script src="/socket.io/socket.io.js"></script>
 
         <script src="/js/pubsub.js"></script>
+        <script src="/js/enums.js"></script>
         <script src="/js/main.js"></script>
+
+	<script>
+	$(function(){
+		startPlayer(1, $("#player1"));
+		startPlayer(2, $("#player2"));
+		startPlayer(3, $("#player3"));
+		startPlayer(4, $("#player4"));
+		startPlayer(5, $("#player5"));
+	});
+	</script>
+
+	<style>
+	.player {
+	width: 200px;
+	height: 400px;
+	float: left;
+	border: 1px solid #000;
+	margin: 10px;
+	}
+
+	.team.spy {
+	background-color: #c00;
+	color: #fff;
+	}
+
+	.team.resistance {
+	background-color: #6495ed;
+	}
+	</style>
     </body>
 </html>
 

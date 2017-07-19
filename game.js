@@ -3,18 +3,17 @@ module.exports = function(){
 	var state = GameState.WaitingForPlayers;
 
 	sub("socket join", function(id, data){
-		console.log("Holla")
 		players.push(id);
-		console.log(id, " connected. Currently have:", players.length, " players.")
+		console.log("Game - " + id + " connected. Currently have: " + players.length + " players.")
 		
-		if(players.length >= 2){
+		if(players.length >= 5){
 			gameStart();
 		}
 	});
 	
 	var gameStart = function(){
 		state = GameState.Start;
-		console.log("Start game!");
+		console.log("Game - Start game!");
 
 		distributeRoles();
 	}
@@ -28,11 +27,16 @@ module.exports = function(){
 			console.log(i, totalSpies[players.length]);
 			var index = Math.floor(Math.random() * playerPool.length);
 			spies.push(playerPool[index]);
-			pub('socket message send ' + playerPool[index], 'spy');
 			playerPool.splice(index, 1);
 		}
 
-		console.log(spies);
+		for(var i = 0; i < players.length; i++){
+			if(spies.indexOf(players[i]) >= 0){
+				pub('socket message send ' + players[i], { type: MessageType.InitialMessage, team: Teams.Spy } );
+			} else {
+				pub('socket message send ' + players[i], { type: MessageType.InitialMessage, team: Teams.Resistance } );
+			}
+		}
 	}
 };
 

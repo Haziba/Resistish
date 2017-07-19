@@ -11,6 +11,7 @@ app.get('/', function(req, res,next) {
 });
 
 require('./shared/pubsub.js');
+require('./shared/enums.js');
 
 require('./socket.js')(server);
 

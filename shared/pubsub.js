@@ -14,5 +14,7 @@ parent.pub = function(_event){
 		for(var i = 0; i < listeners[_event].length; i++){
 			listeners[_event][i].apply(null, Array.prototype.slice.call(arguments, 1));
 		}
+	} else {
+		console.log("No event listeners", _event);
 	}
 };
