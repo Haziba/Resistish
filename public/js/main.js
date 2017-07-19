@@ -10,10 +10,13 @@ var startPlayer = function(id, $div){
 		console.log(id, data);
 		switch(data.type){
 			case MessageType.InitialMessage:
-			console.log("Hey cool", data);
 				team = data.team;
 
-				$div.find(".team").text(team == Teams.Resistance ? "Resistance" : "Spy!").addClass(team);
+				$div.append($("<div/>").text(team == Teams.Resistance ? "Resistance" : "Spy!").addClass(team).addClass("team"));
+
+				if(data.teamLeader){
+					$div.append($("<div/>").text("Team Leader").addClass("team-leader"));
+				}
 				break;
 		}
 	});

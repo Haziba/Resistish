@@ -1,6 +1,8 @@
 module.exports = function(){
 	var players = [];
 	var state = GameState.WaitingForPlayers;
+	
+	var spies;
 
 	sub("socket join", function(id, data){
 		players.push(id);
@@ -21,7 +23,7 @@ module.exports = function(){
 	var distributeRoles = function(){
 		var playerPool = players.slice();
 		var totalSpies = [0,0,1,2,2,2,3,4];
-		var spies = [];
+		spies = [];
 
 		for(var i = 0; i < totalSpies[players.length]; i++){
 			console.log(i, totalSpies[players.length]);
@@ -30,12 +32,16 @@ module.exports = function(){
 			playerPool.splice(index, 1);
 		}
 
+		var teamLeader = Math.floor(Math.random() * players.length);
+
 		for(var i = 0; i < players.length; i++){
-			if(spies.indexOf(players[i]) >= 0){
-				pub('socket message send ' + players[i], { type: MessageType.InitialMessage, team: Teams.Spy } );
-			} else {
-				pub('socket message send ' + players[i], { type: MessageType.InitialMessage, team: Teams.Resistance } );
-			}
+			var team = spies.indexOf(players[i]) >= 0 ? Teams.Spy : Teams.Resistance;
+
+			pub('socket message send ' + players[i], {
+				type: MessageType.InitialMessage, 
+				team: team,
+				teamLeader: i == teamLeader,
+			} );
 		}
 	}
 };
