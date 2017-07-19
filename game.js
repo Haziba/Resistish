@@ -1,12 +1,18 @@
 module.exports = function(){
 	var players = [];
 	var state = GameState.WaitingForPlayers;
+	var teamLeader;
+	var level = 0;
 	
 	var spies;
 
 	sub("socket join", function(id, data){
 		players.push(id);
 		console.log("Game - " + id + " connected. Currently have: " + players.length + " players.")
+
+		sub("socket message get " + id, function(data){
+			console.log("Heyyy dawg", id, data);
+		});
 		
 		if(players.length >= 5){
 			gameStart();
@@ -18,6 +24,12 @@ module.exports = function(){
 		console.log("Game - Start game!");
 
 		distributeRoles();
+
+		levelRun();
+	}
+
+	var levelRun = function(){
+		leadTeam();
 	}
 
 	var distributeRoles = function(){
@@ -32,7 +44,7 @@ module.exports = function(){
 			playerPool.splice(index, 1);
 		}
 
-		var teamLeader = Math.floor(Math.random() * players.length);
+		teamLeader = Math.floor(Math.random() * players.length);
 
 		for(var i = 0; i < players.length; i++){
 			var team = spies.indexOf(players[i]) >= 0 ? Teams.Spy : Teams.Resistance;
@@ -42,6 +54,18 @@ module.exports = function(){
 				team: team,
 				teamLeader: i == teamLeader,
 			} );
+		}
+	}
+
+	var leadTeam = function(){
+		var playersPerMission = [2,3,2,3,4];
+
+		for(var i = 0; i < players.length; i++){
+			pub('socket message send ' + players[i], {
+				type: i == teamLeader ? MessageType.LeadTheTeam : MessageType.AwaitLeadership,
+				players: players,
+				playersPerMission: playersPerMission[level],
+			});
 		}
 	}
 };
