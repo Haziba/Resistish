@@ -12,7 +12,7 @@ module.exports = function(server){
 
 		client.on('message', function(data) {
 			pub('socket message get ' + id, data);
-			console.log('Socket - message', id, data);
+			console.log('Socket - socket message get ', id, data);
 		});
 
 		sub("socket message send " + id, function(data){

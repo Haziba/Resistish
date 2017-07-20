@@ -1,8 +1,14 @@
 module.exports = function(){
 	var players = [];
-	var state = GameState.WaitingForPlayers;
 	var teamLeader;
+	var playersPerMission = [2,3,2,3,4];
 	var level = 0;
+	var votes = [];
+	var _chosenPlayers;
+	var choices;
+
+	var successes = 0;
+	var failures = 0;
 	
 	var spies;
 
@@ -11,7 +17,15 @@ module.exports = function(){
 		console.log("Game - " + id + " connected. Currently have: " + players.length + " players.")
 
 		sub("socket message get " + id, function(data){
-			console.log("Heyyy dawg", id, data);
+			if(data.type == MessageType.SendTeam){
+				sendTeam(data.chosenPlayers);
+			}
+			if(data.type == MessageType.TeamVoteVote){
+				teamVote(data.vote);
+			}
+			if(data.type == MessageType.MissionChoice){
+				missionChoice(data.choice);
+			}
 		});
 		
 		if(players.length >= 5){
@@ -20,7 +34,6 @@ module.exports = function(){
 	});
 	
 	var gameStart = function(){
-		state = GameState.Start;
 		console.log("Game - Start game!");
 
 		distributeRoles();
@@ -44,7 +57,7 @@ module.exports = function(){
 			playerPool.splice(index, 1);
 		}
 
-		teamLeader = Math.floor(Math.random() * players.length);
+		teamLeader = 0;
 
 		for(var i = 0; i < players.length; i++){
 			var team = spies.indexOf(players[i]) >= 0 ? Teams.Spy : Teams.Resistance;
@@ -57,9 +70,22 @@ module.exports = function(){
 		}
 	}
 
-	var leadTeam = function(){
-		var playersPerMission = [2,3,2,3,4];
+	var newLeader = function(){
+		// Could potentially all be wrapped up in the LeadTheTeam / AwaitLeadership messages
+		pub('socket message send ' + players[teamLeader], {
+			type: MessageType.RelinquishCommand,
+		});
 
+		teamLeader = (teamLeader + 1) % players.length;
+
+		pub('socket message send ' + players[teamLeader], {
+			type: MessageType.AssumeCommand,
+		});
+
+		leadTeam();
+	}
+
+	var leadTeam = function(){
 		for(var i = 0; i < players.length; i++){
 			pub('socket message send ' + players[i], {
 				type: i == teamLeader ? MessageType.LeadTheTeam : MessageType.AwaitLeadership,
@@ -68,9 +94,83 @@ module.exports = function(){
 			});
 		}
 	}
-};
 
-var GameState = {
-	WaitingForPlayers: 1,
-	Start: 2,
+	var sendTeam = function(chosenPlayers){
+		_chosenPlayers = chosenPlayers
+		for(var i = 0; i < players.length; i++){
+			pub('socket message send ' + players[i], {
+				type: MessageType.TeamVote,
+				chosenPlayers: chosenPlayers,
+			});
+		}
+	}
+
+	var teamVote = function(vote, chosenPlayers){
+		if(votes.length == 0){
+			votes = [];
+		}
+		votes.push(vote);
+		if(votes.length == players.length){
+			var passVotes = votes.filter(function(a) { return a; }).length;
+			var passed = passVotes > (votes.length / 2);
+
+			for(var i = 0; i < players.length; i++){
+				pub('socket message send ' + players[i], {
+					type: MessageType.VoteResult,
+					votes: votes,
+					pass: passed
+				});
+			}
+
+			if(passed){
+				choices = [];
+
+				setTimeout(function(){
+					for(var i = 0; i < players.length; i++){
+						pub('socket message send ' + players[i], {
+							type: _chosenPlayers.indexOf(players[i]) >= 0 ? MessageType.PlayMission : MessageType.WaitForMission,
+							canFail: spies.indexOf(players[i]) >= 0,
+						});
+					}
+				}, 3000);
+			} else {
+				newLeader();
+			}
+		}
+	}
+
+	var messageChoice = function(choice){
+		choices.push(choice);
+		if(choices.length >= playersPerMission[level]){
+			var success = choices.filter(function(a){ return a; }).length == choices.length;
+			if(success)
+				successes++;
+			else
+				failures++;
+
+			for(var i = 0; i < players.length; i++){
+				pub('socket message send ' + players[i], {
+					type: MessageType.MissionResult,
+					success: success
+				});
+			}
+
+			if(successes >= 3){
+				gameEnd({won: true});
+			} else if(failures >= 3){
+				gameEnd({won: false});
+			} else {
+				setTimeout(newLeader, 3000);
+			}
+		}
+	}
+
+	var gameEnd = function(result){
+		for(var i = 0; i < players.length; i++){
+			pub('socket message send ' + players[i], {
+				type: MessageType.GameEnd,
+				won: result.won
+			});
+		}
+	}
 };

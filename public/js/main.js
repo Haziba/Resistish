@@ -6,6 +6,11 @@ var startPlayer = function(id, $div){
 	socket.on('connect', function(data) {
 		socket.emit('join');
 	});
+
+	sub('socket message send ' + id, function(data){
+		socket.emit('message', data);
+	});
+
 	socket.on('message', function(data) {
 		switch(data.type){
 			case MessageType.InitialMessage:
@@ -19,7 +24,7 @@ var startPlayer = function(id, $div){
 				break;
 
 			case MessageType.LeadTheTeam:
-				var $players = $("<table/>");
+				var $players = $("<table/>").addClass("choosePlayers");
 				var chosenPlayers = [];
 
 				for(var i = 0; i < data.players.length; i++){
@@ -52,7 +57,7 @@ var startPlayer = function(id, $div){
 				$div.append($("<div/>").text("Lead the team"));
 				$div.append($players);
 				$div.append($("<button/>").text("Send Team").addClass("sendTeam").prop("disabled", true).click(function(){
-					pub("socket message send", {
+					pub("socket message send " + id, {
 						type: MessageType.SendTeam,
 						chosenPlayers: chosenPlayers,
 					});
@@ -60,7 +65,43 @@ var startPlayer = function(id, $div){
 				break;
 
 			case MessageType.AwaitLeadership:
-				$div.append($("<div/>").text("Wait for your team to be lead"));
+				$div.append($("<div/>").text("Wait for your team to be lead").addClass("waitOnLeader"));
+				break;
+
+			case MessageType.TeamVote:
+				$div.find(".waitOnLeader, .choosePlayers, .sendTeam").remove();
+				
+				$div.append($("<div/>").addClass("teamVote")
+						.append($("<button/>").text("Accept").click(function(){
+							pub("socket message send " + id, {
+								type: MessageType.TeamVoteVote,
+								vote: true,
+							});
+						}).addClass("accept"))
+						.append($("<button/>").text("Reject").click(function(){
+							pub("socket message send " + id, {
+								type: MessageType.TeamVoteVote,
+								vote: false,
+							});
+						}).addClass("reject"))
+					);
+				break;
+
+			case MessageType.PlayMission:
+				$div.find(".teamVote").remove();
+
+				$div.append($("<div/>").addClass("playMission")
+						.append($("<button/>").text("Pass").click(function(){
+						}).addClass("pass"))
+						.append($("<button/>").text("Fail").click(function(){
+						}).addClass("fail").prop("disabled", !data.canFail))
+					);
+				break;
+
+			case MessageType.WaitForMission:
+				$div.find(".teamVote").remove();
+
+				$div.append($("<div/>").text("Wait for your team to play the mission").addClass("waitOnTeam"));
 				break;
 		}
 	});
